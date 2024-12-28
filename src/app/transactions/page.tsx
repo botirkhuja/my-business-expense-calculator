@@ -5,9 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 // import "ag-grid-community/styles/ag-grid.css";
 // import "ag-grid-community/styles/ag-theme-alpine.css";
-import { TransactionRecord } from "@/model/TransactionRecord";
 import {
-  ColDef,
   AllCommunityModule,
   ModuleRegistry,
   GridReadyEvent,
@@ -18,13 +16,16 @@ import {
   ColumnState,
   FilterChangedEvent,
 } from "ag-grid-community";
+import { TransactionRecord } from "@/model/Transaction";
+import { columnDefs, defaultColDef } from "./ColumnDefs";
+import { recategorizeTransactions } from "./actions";
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 50;
 
-const TransactionsPage: React.FC = () => {
+export default function TransactionsTable() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -33,77 +34,35 @@ const TransactionsPage: React.FC = () => {
   const [rowData, setRowData] = useState<TransactionRecord[]>([]);
   const firstDataRendered = useRef(false);
 
-  // Define our column definitions for the ag-Grid
-  const columnDefs: ColDef[] = useMemo(
-    () => [
-      { headerName: "Card Number", field: "cardNumber" },
-      {
-        headerName: "Post Date",
-        field: "postDate",
-        valueFormatter: dateFormatter,
-      },
-      {
-        headerName: "Transaction Date",
-        field: "transactionDate",
-        valueFormatter: dateFormatter,
-      },
-      { headerName: "Ref ID", field: "refId" },
-      { headerName: "Description", field: "description" },
-      { headerName: "Amount", field: "amount" },
-      { headerName: "Merchant", field: "merchant" },
-      { headerName: "Type", field: "transactionType" },
-      { headerName: "Category", field: "category" },
-      { headerName: "Memo", field: "memo" },
-    ],
-    [],
-  );
+  const pageParam = searchParams.get("page");
 
-  const defaultColDef: ColDef = {
-    sortable: true,
-    filter: true,
-    resizable: true,
-    filterParams: {
-      buttons: ["apply", "clear", "reset"],
-      debounceMs: 200,
-      maxNumConditions: 1,
-      trimInput: true,
-    },
-  };
+  // Convert `filters` and `sort` from JSON string to objects
+  const initialFilterModel: FilterModel = useMemo(() => {
+    const filtersParam = searchParams.get("filters");
+    if (!filtersParam) return {};
+    try {
+      return JSON.parse(filtersParam);
+    } catch (err) {
+      console.error("Invalid filters JSON in URL:", err);
+      return {};
+    }
+  }, [searchParams]);
 
-  // -----------------------------
-  // 1. Parse query params (filters, sort, page)
-  // -----------------------------
-  // We'll store them as JSON strings: e.g. ?filters={"description":{"filter":"abc"}}
-  const currentFilterModel = useMemo(() => {
-    const filterModel: FilterModel = {};
-    searchParams.entries().forEach(([key, value]) => {
-      const column = columnDefs.find((columnDef) => columnDef.field === key);
-      if (!column) return;
+  const initialSortModel: ColumnState[] = useMemo(() => {
+    const sortParam = searchParams.get("sort");
+    if (!sortParam) return [];
+    try {
+      if (sortParam) {
+        return JSON.parse(sortParam);
+      }
+    } catch (err) {
+      console.error("Invalid sort JSON in URL:", err);
+      return [];
+    }
+  }, [searchParams]);
 
-      const filterValues = value.split(",");
-      filterModel[key] = {
-        type: filterValues[1],
-        filter: filterValues[0],
-      };
-    });
-    return filterModel;
-  }, [searchParams, columnDefs]);
-
-  // Simple date formatter function for valueFormatter
-  function dateFormatter(params: { value: string }) {
-    const value = params.value;
-    if (!value) return "";
-    const date = new Date(value);
-    return date.toLocaleDateString();
-  }
-
-  // Parse search params
-  const initialPage = parseInt(searchParams.get("page") || "1", 10);
-  const initialSortField = searchParams.get("sortField") || "";
-  const initialSortOrder = (searchParams.get("sortOrder") || "") as
-    | "asc"
-    | "desc";
-  // const initialCategoryFilter = searchParams.get("category") || "";
+  // Default to page 1 if none provided
+  const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
 
   // On grid ready, set initial sort/filter/pagination state from URL
   const onGridReady = useCallback(
@@ -122,20 +81,19 @@ const TransactionsPage: React.FC = () => {
       const api = params.api;
 
       // Set initial sort model if any
-      if (initialSortField && initialSortOrder) {
+      if (initialSortModel && initialSortModel.length > 0) {
         api.applyColumnState({
-          state: [{ colId: initialSortField, sort: initialSortOrder }],
+          state: initialSortModel,
           applyOrder: true,
         });
       }
 
       // Set initial filter model if any
-
-      if (Object.keys(currentFilterModel).length > 0) {
-        api.setFilterModel(currentFilterModel);
+      if (initialFilterModel && Object.keys(initialFilterModel).length > 0) {
+        api.setFilterModel(initialFilterModel);
       }
     },
-    [initialSortField, initialSortOrder, currentFilterModel],
+    [initialSortModel, initialFilterModel],
   );
 
   // A helper to update the URL without a full reload
@@ -176,52 +134,33 @@ const TransactionsPage: React.FC = () => {
     (params: SortChangedEvent<TransactionRecord>) => {
       const api = params.api;
       if (!api) return;
-      // console.log("onSortChanged", params);
-      const sortModel = params.columns;
-      let sortField: string | undefined = "";
-      let sortOrder: "asc" | "desc" | undefined;
+      const sortModel = params.columns as never as ColumnState[];
+      // console.log("sort model", params.api.getColumnState());
+      const stringifiedSortModel = JSON.stringify(
+        sortModel
+          .filter((c) => c.sort)
+          .map((c) => ({ colId: c.colId, sort: c.sort })),
+      );
       if (sortModel && sortModel.length > 0) {
-        const column = sortModel.at(-1) as never as ColumnState;
-        sortOrder = column.sort || undefined;
-        sortField = sortOrder ? column.colId || undefined : "";
+        updateURLParams({ sort: stringifiedSortModel });
+      } else {
+        updateURLParams({ sort: undefined });
       }
-      updateURLParams({ sortField, sortOrder });
     },
     [updateURLParams],
   );
 
   const onFilterChanged = useCallback(
     (params: FilterChangedEvent) => {
-      console.log("onFilterChanged params", params);
-      console.log("onFilterChanged filter model", params.api.getFilterModel());
       const api = params.api;
       if (!api) return;
       const filterModel = api.getFilterModel();
       const stringifiedFilterModel = JSON.stringify(filterModel);
-      const filter: Record<string, string | undefined> = Object.entries(
-        filterModel,
-      ).reduce(
-        (res, [key, value]) => {
-          let filterValue = "";
-          if (value.filter) {
-            filterValue = `${value.filter},${value.type}`;
-          }
-          return { ...res, [key]: filterValue };
-        },
-        {} as Record<string, string>,
-      );
-
-      Object.keys(currentFilterModel).forEach((key) => {
-        if (!filter[key]) {
-          filter[key] = "";
-        }
-      });
-      console.log(currentFilterModel);
       updateURLParams({
         filters: stringifiedFilterModel === "{}" ? "" : stringifiedFilterModel,
       });
     },
-    [updateURLParams, currentFilterModel],
+    [updateURLParams],
   );
 
   const onPaginationChanged = useCallback(
@@ -234,7 +173,9 @@ const TransactionsPage: React.FC = () => {
 
       if (firstDataRendered && currentPage !== initialPage) {
         // initialPage = currentPage;
-        updateURLParams({ page: currentPage.toString() });
+        updateURLParams({
+          page: currentPage !== 1 ? currentPage.toString() : undefined,
+        });
       }
     },
     [initialPage, firstDataRendered, updateURLParams],
@@ -252,23 +193,39 @@ const TransactionsPage: React.FC = () => {
     [initialPage],
   );
 
-  return (
-    <div className="ag-theme-alpine" style={{ height: "80vh", width: "100%" }}>
-      <AgGridReact
-        ref={gridRef}
-        rowData={rowData}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        pagination={true}
-        paginationPageSize={DEFAULT_PAGE_SIZE}
-        onGridReady={onGridReady}
-        onSortChanged={onSortChanged}
-        onFilterChanged={onFilterChanged}
-        onPaginationChanged={onPaginationChanged}
-        onFirstDataRendered={onFirstDataRendered}
-      />
-    </div>
-  );
-};
+  const rerunCategorization = async () => {
+    const transactions = await recategorizeTransactions();
+    console.log("Transactions:", transactions);
+    // setRowData(transactions);
+  };
 
-export default TransactionsPage;
+  return (
+    <main>
+      <h1>Transactions Page</h1>
+      <p>Here you can view and manage your transactions.</p>
+      <div className="p-5">
+        <button className="px-4 py-2 bg-gray-500" onClick={rerunCategorization}>
+          Rerun Categorization
+        </button>
+      </div>
+      <div
+        className="ag-theme-alpine"
+        style={{ height: "80vh", width: "100%" }}
+      >
+        <AgGridReact
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          pagination={true}
+          paginationPageSize={DEFAULT_PAGE_SIZE}
+          onGridReady={onGridReady}
+          onSortChanged={onSortChanged}
+          onFilterChanged={onFilterChanged}
+          onPaginationChanged={onPaginationChanged}
+          onFirstDataRendered={onFirstDataRendered}
+        />
+      </div>
+    </main>
+  );
+}

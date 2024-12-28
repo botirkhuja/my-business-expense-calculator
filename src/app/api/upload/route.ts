@@ -1,10 +1,17 @@
 import { NextResponse, NextRequest } from "next/server";
 import { parse } from "csv-parse";
-import { Transaction } from "@/model/Transaction";
+import {
+  Transaction,
+  TransactionHeaderMap,
+  TransactionRecord,
+} from "@/model/Transaction";
 import { Readable } from "stream";
 import { connectToDatabase } from "@/lib/mongodb";
-import { convertToTransactionType } from "@/lib/transaction";
-import { TransactionRecord } from "@/model/TransactionRecord";
+import {
+  convertToTransactionType,
+  getTransactionCategoryId,
+} from "@/lib/transaction";
+import { getCategories } from "@/app/categories/actions";
 
 // Disable body parsing to handle file streams
 export const config = {
@@ -20,6 +27,7 @@ export async function POST(req: NextRequest) {
 
     // Connect to MongoDB
     await connectToDatabase();
+    const categories = await getCategories();
 
     const buffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(buffer);
@@ -27,28 +35,10 @@ export async function POST(req: NextRequest) {
     readable.push(fileBuffer);
     readable.push(null);
 
-    // Map headers if present
-    const headerMap: Record<string, string> = {
-      "Transaction Date": "transactionDate",
-      "Trans. Date": "transactionDate",
-      "Post Date": "postDate",
-      "Posting Date": "postDate",
-      Card: "cardNumber",
-      "Account/Card Number - last 4 digits": "cardNumber",
-      Description: "description",
-      Amount: "amount",
-      Type: "transactionType",
-      "Transaction Type": "transactionType",
-      Memo: "memo",
-      Category: "category",
-      "Expense Category": "category",
-      "Merchant Category": "merchant",
-      "Reference ID": "refId",
-    };
-
     const parser = readable.pipe(
       parse({
-        columns: (header: string[]) => header.map((h) => headerMap[h.trim()]),
+        columns: (header: string[]) =>
+          header.map((h) => TransactionHeaderMap[h.trim()]),
         trim: true,
         delimiter: ",",
         skipEmptyLines: true,
@@ -66,20 +56,14 @@ export async function POST(req: NextRequest) {
       const transactionType = convertToTransactionType(record.transactionType);
       const isNegativeRegex = /-\d/g;
 
-      if (transactionType === "debit" && isNegativeRegex.test(record.amount)) {
+      if (isNegativeRegex.test(record.amount)) {
         record.amount = record.amount.replace("-", "");
-      }
-
-      if (
-        transactionType === "credit" &&
-        !isNegativeRegex.test(record.amount)
-      ) {
-        record.amount = `-${record.amount}`;
       }
 
       transactions.push({
         ...record,
-        category: record.category || "Uncategorized",
+        category: record.category || "uncategorized",
+        evaluvatedCategory: getTransactionCategoryId(record, categories),
         transactionType,
       });
     }
