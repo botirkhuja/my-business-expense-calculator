@@ -34,6 +34,7 @@ export interface TransactionRecord {
   category: string;
   normalizedCategory: string;
   evaluvatedCategory: Types.ObjectId | ICategory | null;
+  isCategoryManuallySet?: boolean;
   memo: string;
 }
 
@@ -63,6 +64,7 @@ const TransactionSchema = new Schema<
       type: Schema.Types.ObjectId || null,
       ref: Category,
     },
+    isCategoryManuallySet: { type: Boolean, default: false },
     memo: String,
   },
   { timestamps: true },
@@ -93,6 +95,7 @@ export const transactionToJson = (
     evaluvatedCategory: categoryToJson(
       transactionRecord.evaluvatedCategory as ICategory,
     ),
+    isCategoryManuallySet: transactionRecord.isCategoryManuallySet,
     memo: transactionRecord.memo,
     _id: transactionRecord._id.toString(),
   };

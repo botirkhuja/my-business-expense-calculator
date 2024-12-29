@@ -21,11 +21,17 @@ import {
   SortChangedEvent,
   ColumnState,
   FilterChangedEvent,
+  CellValueChangedEvent,
 } from "ag-grid-community";
 import { TransactionRecord } from "@/model/Transaction";
-import { columnDefs, defaultColDef } from "./ColumnDefs";
-import { getTransactions, recategorizeTransactions } from "./actions";
+import { COLUMN_DEFS, defaultColDef } from "./ColumnDefs";
+import {
+  changeTransactionCategory,
+  getTransactions,
+  recategorizeTransactions,
+} from "./actions";
 import { getCategories } from "../categories/actions";
+import { ICategory } from "@/model/Category";
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -39,6 +45,7 @@ export default function TransactionsTable() {
   const gridRef = useRef<AgGridReact>(null);
 
   const [rowData, setRowData] = useState<TransactionRecord[]>([]);
+  const [colDefs, setColDefs] = useState(COLUMN_DEFS);
   const firstDataRendered = useRef(false);
 
   const pageParam = searchParams.get("page");
@@ -73,13 +80,32 @@ export default function TransactionsTable() {
 
   useEffect(() => {
     const fetchCagetories = async () => {
-      // const categories = await getCategories();
-      // console.log("categories", categories);
-      // if (gridRef.current?.api) {
-      //   const evaluvatedCategoryColumnDef =
-      //     gridRef.current.api.getColumnDef("evaluvatedCategory");
-      //   console.log("evaluvatedCategoryColumnDef", evaluvatedCategoryColumnDef);
-      // }
+      getCategories().then((res) => {
+        console.log("res", res);
+        const newColumnDefs = [...COLUMN_DEFS];
+        const evaluvatedCategoryColumnDefIdx = newColumnDefs.findIndex(
+          (colDef) => colDef.field === "evaluvatedCategory",
+        );
+        if (evaluvatedCategoryColumnDefIdx !== -1) {
+          const evaluvatedCategoryColumnDef = {
+            ...newColumnDefs[evaluvatedCategoryColumnDefIdx],
+          };
+
+          evaluvatedCategoryColumnDef.cellEditorParams = {
+            values: res,
+          };
+          evaluvatedCategoryColumnDef.cellEditorParams.values.push({
+            _id: null,
+            name: "Uncategorized",
+          });
+
+          newColumnDefs[evaluvatedCategoryColumnDefIdx] =
+            evaluvatedCategoryColumnDef;
+
+          // update the column definition
+          setColDefs(newColumnDefs);
+        }
+      });
     };
 
     fetchCagetories();
@@ -108,13 +134,6 @@ export default function TransactionsTable() {
           setRowData(res.transactions);
         })
         .catch((err) => console.error(err));
-
-      getCategories().then((res) => {
-        console.log("res", res);
-        const evaluvatedCategoryColumnDef =
-          api.getColumnDef("evaluvatedCategory");
-        console.log("evaluvatedCategoryColumnDef", evaluvatedCategoryColumnDef);
-      });
 
       // Set initial sort model if any
       if (initialSortModel && initialSortModel.length > 0) {
@@ -235,6 +254,13 @@ export default function TransactionsTable() {
     // setRowData(transactions);
   };
 
+  const handleCellValueChange = (params: CellValueChangedEvent<ICategory>) => {
+    console.log(params);
+    if (params.newValue._id !== params.oldValue._id) {
+      changeTransactionCategory(params.data._id, params.newValue._id);
+    }
+  };
+
   return (
     <main>
       <h1>Transactions Page</h1>
@@ -251,7 +277,7 @@ export default function TransactionsTable() {
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
-          columnDefs={columnDefs}
+          columnDefs={colDefs}
           defaultColDef={defaultColDef}
           pagination={true}
           paginationPageSize={DEFAULT_PAGE_SIZE}
@@ -260,6 +286,7 @@ export default function TransactionsTable() {
           onFilterChanged={onFilterChanged}
           onPaginationChanged={onPaginationChanged}
           onFirstDataRendered={onFirstDataRendered}
+          onCellValueChanged={handleCellValueChange}
         />
       </div>
     </main>

@@ -15,7 +15,7 @@ export const defaultColDef: ColDef = {
 };
 
 // Define our column definitions for the ag-Grid
-export const columnDefs: ColDef[] = [
+export const COLUMN_DEFS: ColDef[] = [
   {
     headerName: "Card Number",
     field: "cardNumber",
@@ -57,6 +57,11 @@ export const columnDefs: ColDef[] = [
     valueFormatter: (params: ValueFormatterParams<Partial<ICategory>>) => {
       return params.value?.name || "Uncategorized";
     },
+    editable: true,
+    cellEditor: "agSelectCellEditor",
+    // cellEditorParams: {
+    //   values: ["Uncategorized"],
+    // },
   },
   {
     headerName: "Type",
