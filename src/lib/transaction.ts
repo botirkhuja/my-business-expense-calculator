@@ -19,29 +19,28 @@ export function getTransactionCategoryId(
   categories: ICategory[],
 ): Types.ObjectId | null {
   const { description, merchant, category } = transaction;
-  let categoryFromDescription: Types.ObjectId | null = null;
-  let categoryFromMerchant: Types.ObjectId | null = null;
-  let categoryFromRecord: Types.ObjectId | null = null;
 
   for (const cat of categories) {
-    if (cat.regex) {
-      const regex = new RegExp(cat.regex, "i");
-      const catId = new Types.ObjectId(cat._id);
-      if (description && regex.test(description)) {
-        categoryFromDescription = catId;
-      }
-      if (merchant && regex.test(merchant)) {
-        categoryFromMerchant = catId;
-      }
-      if (category && regex.test(category)) {
-        categoryFromRecord = catId;
+    if (cat.keywords) {
+      for (const keyword of cat.keywords) {
+        const normalizedDescription = description?.toLowerCase();
+        const normalizedMerchant = merchant?.toLowerCase();
+        const normalizedCategory = category?.toLowerCase();
+
+        if (normalizedDescription && normalizedDescription.includes(keyword)) {
+          return new Types.ObjectId(cat._id);
+        }
+
+        if (normalizedMerchant && normalizedMerchant.includes(keyword)) {
+          return new Types.ObjectId(cat._id);
+        }
+
+        if (normalizedCategory && normalizedCategory.includes(keyword)) {
+          return new Types.ObjectId(cat._id);
+        }
       }
     }
   }
-
-  if (categoryFromDescription !== null) return categoryFromDescription;
-  if (categoryFromMerchant !== null) return categoryFromMerchant;
-  if (categoryFromRecord !== null) return categoryFromRecord;
 
   return null;
 }

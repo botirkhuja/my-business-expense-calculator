@@ -63,7 +63,10 @@ export async function POST(req: NextRequest) {
       transactions.push({
         ...record,
         category: record.category || "uncategorized",
+        normalizedCategory: record.category?.toLowerCase() || "uncategorized",
         evaluvatedCategory: getTransactionCategoryId(record, categories),
+        normalizedDescription: record.description?.toLowerCase() || null,
+        normalizedMerchant: record.merchant?.toLowerCase() || null,
         transactionType,
       });
     }

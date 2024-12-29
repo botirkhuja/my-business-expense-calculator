@@ -8,7 +8,7 @@ export interface ICategory {
   regex: string;
   icon: string;
   key: string;
-  keywords?: string[];
+  keywords: string[];
   createdAt: Date;
   updatedAt: Date | null;
   isDeleted: boolean;

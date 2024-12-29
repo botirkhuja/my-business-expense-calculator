@@ -1,4 +1,4 @@
-import mongoose, { Schema, Model, Document, Types } from "mongoose";
+import mongoose, { Schema, Model, Types } from "mongoose";
 import { Category, categoryToJson, ICategory } from "./Category";
 
 export const TransactionHeaderMap: Record<string, string> = {
@@ -19,16 +19,20 @@ export const TransactionHeaderMap: Record<string, string> = {
   "Reference ID": "refId",
 };
 
-export interface TransactionRecord extends Document<string> {
+export interface TransactionRecord {
+  _id: string;
   cardNumber: string;
   postDate: Date;
   transactionDate: Date;
   refId: string;
   description: string;
+  normalizedDescription: string;
   amount: string;
-  merchant: string;
+  merchant: string | null;
+  normalizedMerchant: string | null;
   transactionType: "debit" | "credit";
   category: string;
+  normalizedCategory: string;
   evaluvatedCategory: Types.ObjectId | ICategory | null;
   memo: string;
 }
@@ -43,15 +47,18 @@ const TransactionSchema = new Schema<
     transactionDate: { type: Date, required: true },
     refId: String,
     description: String,
+    normalizedDescription: String,
     // Amount is stored as a string to avoid floating point errors
     amount: { type: String, required: true },
-    merchant: String,
+    merchant: String || null,
+    normalizedMerchant: String || null,
     transactionType: {
       type: String,
       enum: ["debit", "credit"],
       required: true,
     },
     category: { type: String, required: true },
+    normalizedCategory: String,
     evaluvatedCategory: {
       type: Schema.Types.ObjectId || null,
       ref: Category,
@@ -67,22 +74,27 @@ export const Transaction: Model<TransactionRecord> =
 
 export default Transaction;
 
-export const transactionToJson = (transactionRecord: TransactionRecord) => {
+export const transactionToJson = (
+  transactionRecord: TransactionRecord,
+): TransactionRecord => {
   const transaction = {
     cardNumber: transactionRecord.cardNumber,
     postDate: transactionRecord.postDate,
     transactionDate: transactionRecord.transactionDate,
     refId: transactionRecord.refId,
     description: transactionRecord.description,
+    normalizedDescription: transactionRecord.normalizedDescription,
     amount: transactionRecord.amount,
     merchant: transactionRecord.merchant,
+    normalizedMerchant: transactionRecord.normalizedMerchant,
     transactionType: transactionRecord.transactionType,
     category: transactionRecord.category,
+    normalizedCategory: transactionRecord.normalizedCategory,
     evaluvatedCategory: categoryToJson(
       transactionRecord.evaluvatedCategory as ICategory,
     ),
     memo: transactionRecord.memo,
     _id: transactionRecord._id.toString(),
   };
-  return transaction as TransactionRecord;
+  return transaction;
 };
