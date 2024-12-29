@@ -1,8 +1,27 @@
+"use client";
+
+import { ICategory } from "@/model/Category";
 import CategoriesTable from "./CategoriesTable";
 import { getCategories, updateCategory } from "./actions";
+import { useEffect, useState } from "react";
 
-export default async function CategoriesPage() {
-  const categoriesData = await getCategories();
+export default function CategoriesPage() {
+  const [categoriesData, setCategoriesData] = useState<ICategory[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const categoriesData = await getCategories();
+      setCategoriesData(categoriesData);
+    };
+
+    fetchCategories();
+
+    return () => {
+      setCategoriesData([]);
+    };
+  }, []);
+
+  if (!categoriesData.length) return null;
 
   return (
     <main>

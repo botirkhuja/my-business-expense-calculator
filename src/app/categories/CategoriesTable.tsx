@@ -12,6 +12,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import EditCategoryButton from "./EditCategoryButton";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -41,9 +42,9 @@ export default function CategoriesTable({
         if (params.data === null || params.data === undefined) {
           return "";
         }
-        if (params.data.isNew) {
-          return "Enter new category";
-        }
+        // if (params.data.isNew) {
+        //   return "Enter new category";
+        // }
         return params.data.name;
       },
     },
@@ -56,9 +57,29 @@ export default function CategoriesTable({
       field: "icon",
     },
     {
-      headerName: "Key",
-      field: "key",
+      headerName: "Keywords",
+      field: "keywords",
+      valueFormatter: (params: ValueFormatterParams<ICategory, ICategory>) => {
+        if (params.data === null || params.data === undefined) {
+          return "";
+        }
+
+        if (params.data.keywords === undefined) {
+          return "";
+        }
+
+        return params.data.keywords.join(", ");
+      },
       editable: false,
+    },
+    {
+      headerName: "Actions",
+      cellRenderer: EditCategoryButton,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      editable: false,
+      width: 100,
     },
   ];
 
@@ -72,15 +93,14 @@ export default function CategoriesTable({
         return null;
       }
 
-      if (params.data.isNew) {
-        return "bg-green-200 text-red-900";
-      }
+      // if (params.data.isNew) {
+      //   return "bg-green-200 text-red-900";
+      // }
       return null;
     },
   };
 
   const pathName = usePathname();
-  console.log("pathname", pathName);
 
   const handleCellValueChange = (params: CellValueChangedEvent<ICategory>) => {
     const newData = params.data;
@@ -90,7 +110,10 @@ export default function CategoriesTable({
   return (
     <div className="grid gap-4">
       <div>
-        <Link href={`${pathName}/create`} className="px-4 py-2 bg-gray-500">
+        <Link
+          href={`${pathName}/create`}
+          className="px-4 py-2 bg-gray-500 rounded"
+        >
           {" "}
           Add New Category{" "}
         </Link>

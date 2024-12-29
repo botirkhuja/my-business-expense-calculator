@@ -1,7 +1,7 @@
 "use server";
 
 import { connectToDatabase } from "@/lib/mongodb";
-import { Category, ICategory } from "@/model/Category";
+import { Category, categoryToJson, ICategory } from "@/model/Category";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -40,7 +40,6 @@ const createCategorySchema = z.object({
 
 // Create a new category and redirect to the categories page
 export async function createCategory(formData: FormData) {
-  console.log("form data", formData);
   const validatedFields = createCategorySchema.safeParse({
     name: formData.get("name"),
     regex: formData.get("regex"),
@@ -49,7 +48,6 @@ export async function createCategory(formData: FormData) {
   });
 
   if (!validatedFields.success) {
-    console.log("not validated");
     return {
       errors: validatedFields.error.flatten().fieldErrors,
     };
@@ -86,4 +84,38 @@ export async function updateCategory(data: Partial<ICategory>) {
   category.set(data);
   await category.save();
   return { success: true };
+}
+
+export async function getCategoryByKey(key: string) {
+  await connectToDatabase();
+
+  let category = await Category.findOne({ key });
+  if (!category) {
+    try {
+      category = await Category.findById(key);
+    } catch {
+      throw new Error("Category not found");
+    }
+  }
+
+  if (!category) {
+    throw new Error("Category not found");
+  }
+
+  return categoryToJson(category);
+}
+
+export async function convertCategoryRegexToKeywords(categoryId: string) {
+  await connectToDatabase();
+
+  const categoryFound = await Category.findById(categoryId, "regex");
+  if (!categoryFound) {
+    throw new Error("Category not found");
+  }
+
+  const regexSet = new Set(categoryFound.regex.split("|"));
+  categoryFound.keywords = Array.from(regexSet);
+  await categoryFound.save();
+  console.log("category updated", categoryFound);
+  return categoryToJson(categoryFound);
 }
