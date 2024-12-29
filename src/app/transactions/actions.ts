@@ -9,25 +9,19 @@ import { AnyBulkWriteOperation } from "mongoose";
 import { getCategories } from "../categories/actions";
 import { getTransactionCategoryId } from "@/lib/transaction";
 
-type GetTransactionsProps = {
-  page?: number;
-  limit?: number;
-};
-
 type GetTransactionsResponse = {
   transactions: TransactionRecord[];
   totalRecords: number;
 };
 
-export async function getTransactions(
-  props: GetTransactionsProps,
-): Promise<GetTransactionsResponse> {
+export async function getTransactions(): Promise<GetTransactionsResponse> {
   console.log("get transactions is invoked");
   connectToDatabase();
   // Fetch data from database
-  const transactions = await Transaction.find()
-    .populate("evaluvatedCategory", "name")
-    .limit(props.limit || 10);
+  const transactions = await Transaction.find().populate(
+    "evaluvatedCategory",
+    "name",
+  );
   const result = transactions.map(transactionToJson);
 
   const totalRecords = await Transaction.estimatedDocumentCount();

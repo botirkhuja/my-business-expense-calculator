@@ -1,6 +1,12 @@
 "use client"; // Needed because we'll fetch data at runtime and use React states
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 // import "ag-grid-community/styles/ag-grid.css";
@@ -18,7 +24,8 @@ import {
 } from "ag-grid-community";
 import { TransactionRecord } from "@/model/Transaction";
 import { columnDefs, defaultColDef } from "./ColumnDefs";
-import { recategorizeTransactions } from "./actions";
+import { getTransactions, recategorizeTransactions } from "./actions";
+import { getCategories } from "../categories/actions";
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -64,21 +71,50 @@ export default function TransactionsTable() {
   // Default to page 1 if none provided
   const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
 
+  useEffect(() => {
+    const fetchCagetories = async () => {
+      // const categories = await getCategories();
+      // console.log("categories", categories);
+      // if (gridRef.current?.api) {
+      //   const evaluvatedCategoryColumnDef =
+      //     gridRef.current.api.getColumnDef("evaluvatedCategory");
+      //   console.log("evaluvatedCategoryColumnDef", evaluvatedCategoryColumnDef);
+      // }
+    };
+
+    fetchCagetories();
+
+    return () => {};
+  }, []);
+
   // On grid ready, set initial sort/filter/pagination state from URL
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
-      console.log("Grid ready");
+      const api = params.api;
 
+      console.log("Grid ready");
       // Fetch transaction data from API
       // Ensure you have an API route like /api/transactions that returns a JSON array of TransactionRecord
-      fetch("/api/transactions")
-        .then((res) => res.json())
-        .then((data: TransactionRecord[]) => {
-          setRowData(data);
+      // fetch("/api/transactions")
+      //   .then((res) => res.json())
+      //   .then((data: TransactionRecord[]) => {
+      //     setRowData(data);
+      //   })
+      //   .catch((err) => console.error(err));
+
+      getTransactions()
+        .then((res) => {
+          console.log("transactions res", res);
+          setRowData(res.transactions);
         })
         .catch((err) => console.error(err));
 
-      const api = params.api;
+      getCategories().then((res) => {
+        console.log("res", res);
+        const evaluvatedCategoryColumnDef =
+          api.getColumnDef("evaluvatedCategory");
+        console.log("evaluvatedCategoryColumnDef", evaluvatedCategoryColumnDef);
+      });
 
       // Set initial sort model if any
       if (initialSortModel && initialSortModel.length > 0) {

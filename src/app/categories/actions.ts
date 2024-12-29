@@ -119,3 +119,39 @@ export async function convertCategoryRegexToKeywords(categoryId: string) {
   console.log("category updated", categoryFound);
   return categoryToJson(categoryFound);
 }
+
+export async function addKeywordToCategoryById(
+  categoryId: string,
+  keyword: string,
+) {
+  await connectToDatabase();
+
+  const categoryFound = await Category.findById(categoryId);
+  if (!categoryFound) {
+    throw new Error("Category not found");
+  }
+
+  const keywordSet = new Set(categoryFound.keywords);
+  keywordSet.add(keyword);
+  categoryFound.keywords = Array.from(keywordSet);
+  await categoryFound.save();
+  return categoryToJson(categoryFound);
+}
+
+export async function removeKeywordFromCategoryById(
+  categoryId: string,
+  keyword: string,
+) {
+  await connectToDatabase();
+
+  const categoryFound = await Category.findById(categoryId);
+  if (!categoryFound) {
+    throw new Error("Category not found");
+  }
+
+  const keywordSet = new Set(categoryFound.keywords);
+  keywordSet.delete(keyword);
+  categoryFound.keywords = Array.from(keywordSet);
+  await categoryFound.save();
+  return categoryToJson(categoryFound);
+}

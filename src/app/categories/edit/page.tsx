@@ -1,9 +1,15 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import { ICategory } from "@/model/Category";
-import { convertCategoryRegexToKeywords, getCategoryByKey } from "../actions";
+import {
+  addKeywordToCategoryById,
+  convertCategoryRegexToKeywords,
+  getCategoryByKey,
+  removeKeywordFromCategoryById,
+} from "../actions";
 import ConvertRegexToKeywordsButton from "./ConvertRegexToKeywordsButton";
 import CategoryKeywords from "./CategoryKeywords";
+import { AddCategoryKeyword } from "./AddCategoryKeyword";
 
 export default function Page({
   searchParams,
@@ -38,14 +44,42 @@ export default function Page({
     setCategory(updatedCategory);
   };
 
+  const addCategoryKeyword = async (keyword: string) => {
+    try {
+      const updatedCategory = await addKeywordToCategoryById(
+        category._id,
+        keyword,
+      );
+      setCategory(updatedCategory);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const removeCategoryKeyword = async (keyword: string) => {
+    try {
+      const updatedCategory = await removeKeywordFromCategoryById(
+        category._id,
+        keyword,
+      );
+      setCategory(updatedCategory);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
-    <main>
+    <main className="grid gap-2">
       <h1>Category Page</h1>
       <p>This page shows the details of a category.</p>
       <p>Category name: {category.name}</p>
       <p>Regex: {category.regex}</p>
       <ConvertRegexToKeywordsButton convertAction={convertRegexToKeywords} />
-      <CategoryKeywords category={category} />
+      <CategoryKeywords
+        category={category}
+        removeKeywordAction={removeCategoryKeyword}
+      />
+      <AddCategoryKeyword addKeywordAction={addCategoryKeyword} />
     </main>
   );
 }
