@@ -7,10 +7,7 @@ import {
 } from "@/model/Transaction";
 import { Readable } from "stream";
 import { connectToDatabase } from "@/lib/mongodb";
-import {
-  convertToTransactionType,
-  getTransactionCategoryId,
-} from "@/lib/transaction";
+import { convertToTransactionType, getTextCategoryId } from "@/lib/transaction";
 import { getCategories } from "@/app/categories/actions";
 
 // Disable body parsing to handle file streams
@@ -64,7 +61,7 @@ export async function POST(req: NextRequest) {
         ...record,
         category: record.category || "uncategorized",
         normalizedCategory: record.category?.toLowerCase() || "uncategorized",
-        evaluvatedCategory: getTransactionCategoryId(record, categories),
+        evaluvatedCategory: getTextCategoryId(record, categories),
         normalizedDescription: record.description?.toLowerCase() || null,
         normalizedMerchant: record.merchant?.toLowerCase() || null,
         transactionType,

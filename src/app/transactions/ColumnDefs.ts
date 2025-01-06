@@ -1,6 +1,24 @@
 import { ICategory } from "@/model/Category";
 import { ColDef, ValueFormatterParams } from "ag-grid-community";
 import { dateFormatter } from "./DateFormatter";
+import { TransactionRecord } from "@/model/Transaction";
+
+function CurrencyCellRendererUSD(
+  params: ValueFormatterParams<TransactionRecord, string>,
+) {
+  const { value } = params;
+
+  if (!value) {
+    return "$0.00";
+  }
+
+  const inrFormat = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  });
+  return inrFormat.format(parseFloat(value));
+}
 
 export const defaultColDef: ColDef = {
   sortable: true,
@@ -38,7 +56,8 @@ export const COLUMN_DEFS: ColDef[] = [
     field: "amount",
     filter: "agNumberColumnFilter",
     type: "numericColumn",
-    valueFormatter: (params) => `$${params.value}`,
+    cellDataType: "number",
+    valueFormatter: CurrencyCellRendererUSD,
   },
   {
     headerName: "Merchant",
@@ -65,7 +84,7 @@ export const COLUMN_DEFS: ColDef[] = [
   },
   {
     headerName: "Type",
-    field: "transactionType",
+    field: "evaluvatedTransactionType",
     filter: "agTextColumnFilter",
   },
   {

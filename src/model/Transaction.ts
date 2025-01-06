@@ -4,6 +4,7 @@ import { Category, categoryToJson, ICategory } from "./Category";
 export const TransactionHeaderMap: Record<string, string> = {
   "Transaction Date": "transactionDate",
   "Trans. Date": "transactionDate",
+  Date: "transactionDate",
   "Post Date": "postDate",
   "Posting Date": "postDate",
   Card: "cardNumber",
@@ -21,7 +22,7 @@ export const TransactionHeaderMap: Record<string, string> = {
 
 export interface TransactionRecord {
   _id: string;
-  cardNumber: string;
+  cardNumber: string | null;
   postDate: Date;
   transactionDate: Date;
   refId: string;
@@ -30,9 +31,11 @@ export interface TransactionRecord {
   amount: string;
   merchant: string | null;
   normalizedMerchant: string | null;
-  transactionType: "debit" | "credit";
-  category: string;
-  normalizedCategory: string;
+  transactionType: string | null;
+  evaluvatedTransactionType: "debit" | "credit";
+  accountType: "checking" | "credit" | "savings";
+  category: string | null;
+  normalizedCategory: string | null;
   evaluvatedCategory: Types.ObjectId | ICategory | null;
   isCategoryManuallySet?: boolean;
   memo: string;
@@ -43,26 +46,35 @@ const TransactionSchema = new Schema<
   Model<TransactionRecord>
 >(
   {
-    cardNumber: { type: String, required: true },
+    cardNumber: { type: String || null, default: null },
     postDate: { type: Date, required: true },
     transactionDate: { type: Date, required: true },
     refId: String,
-    description: String,
+    description: { type: String, required: true },
     normalizedDescription: String,
-    // Amount is stored as a string to avoid floating point errors
     amount: { type: String, required: true },
     merchant: String || null,
     normalizedMerchant: String || null,
     transactionType: {
+      type: String || null,
+      default: null,
+    },
+    evaluvatedTransactionType: {
       type: String,
       enum: ["debit", "credit"],
       required: true,
     },
-    category: { type: String, required: true },
-    normalizedCategory: String,
+    accountType: {
+      type: String,
+      enum: ["checking", "credit", "savings"],
+      required: true,
+    },
+    category: { type: String, default: null },
+    normalizedCategory: { type: String, default: null },
     evaluvatedCategory: {
       type: Schema.Types.ObjectId || null,
       ref: Category,
+      default: null,
     },
     isCategoryManuallySet: { type: Boolean, default: false },
     memo: String,
@@ -90,6 +102,8 @@ export const transactionToJson = (
     merchant: transactionRecord.merchant,
     normalizedMerchant: transactionRecord.normalizedMerchant,
     transactionType: transactionRecord.transactionType,
+    evaluvatedTransactionType: transactionRecord.evaluvatedTransactionType,
+    accountType: transactionRecord.accountType,
     category: transactionRecord.category,
     normalizedCategory: transactionRecord.normalizedCategory,
     evaluvatedCategory: categoryToJson(

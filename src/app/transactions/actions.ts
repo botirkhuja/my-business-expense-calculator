@@ -7,8 +7,9 @@ import Transaction, {
 } from "@/model/Transaction";
 import { AnyBulkWriteOperation, Types } from "mongoose";
 import { getCategories, getCategoryByKey } from "../categories/actions";
-import { getTransactionCategoryId } from "@/lib/transaction";
+import { getTransactionRecordCategoryId } from "@/lib/transaction";
 import { ICategory } from "@/model/Category";
+import { revalidateTag } from "next/cache";
 
 type GetTransactionsResponse = {
   transactions: TransactionRecord[];
@@ -40,7 +41,7 @@ export async function recategorizeTransactions() {
   const updatedTransactions: AnyBulkWriteOperation<TransactionRecord>[] = [];
 
   for (const transaction of transactions) {
-    const category = getTransactionCategoryId(transaction, categories);
+    const category = getTransactionRecordCategoryId(transaction, categories);
     if (
       !transaction.isCategoryManuallySet &&
       category &&
@@ -59,21 +60,9 @@ export async function recategorizeTransactions() {
     await Transaction.bulkWrite(updatedTransactions);
   }
 
-  return transactions
-    .map((transaction) => {
-      return {
-        ...transaction,
-        _id: transaction._id,
-        evaluvatedCategory: transaction.evaluvatedCategory
-          ? categories.find(
-              (cat) =>
-                cat._id.toString() ===
-                (transaction.evaluvatedCategory as never as string),
-            )
-          : null,
-      } as never as TransactionRecord;
-    })
-    .map(transactionToJson);
+  revalidateTag("/transactions");
+
+  return;
 }
 
 export async function changeTransactionCategory(

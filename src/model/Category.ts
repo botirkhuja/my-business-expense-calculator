@@ -9,6 +9,7 @@ export interface ICategory {
   icon: string;
   key: string;
   keywords: string[];
+  categoryType: "expense" | "income";
   createdAt: Date;
   updatedAt: Date | null;
   isDeleted: boolean;
@@ -21,6 +22,11 @@ const CategorySchema = new Schema<ICategory, Model<ICategory>>(
     icon: { type: String, required: true },
     key: { type: String, required: true },
     keywords: { type: [String], default: [] },
+    categoryType: {
+      type: String,
+      enum: ["expense", "income"],
+      default: "expense",
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: null },
     isDeleted: { type: Boolean, default: false },
@@ -44,6 +50,7 @@ export const categoryToJson = (
     icon: category.icon,
     key: category.key,
     keywords: category.keywords,
+    categoryType: category.categoryType,
     createdAt: category.createdAt,
     updatedAt: category.updatedAt,
     isDeleted: category.isDeleted,

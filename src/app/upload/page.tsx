@@ -1,35 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { uploadFile } from "./actions";
+import SubmitButton from "./SubmitButton";
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
-  const [message, setMessage] = useState<string>("");
+  const [message, setMessage] = useState("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setFile(e.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      setMessage("Please select a file first.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      setMessage(data.message || data.error || "Something went wrong.");
-    } catch (error) {
-      console.error("Upload error:", error);
-      setMessage("Failed to upload file.");
+  const uploadFileToServer = async (event: FormData) => {
+    const result = await uploadFile(event);
+    if (result?.error) {
+      setMessage(result.error);
     }
   };
 
@@ -37,24 +18,29 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <h1 className="text-4xl font-bold pb-24">Upload bank transactions</h1>
 
-      <label htmlFor="source" className="block">
-        Source:
-      </label>
-      <label htmlFor="csvFile" className="block">
-        CSV file:
-      </label>
-      <input
-        type="file"
-        name="csvFile"
-        className="w-96 p-4"
-        onChange={handleFileChange}
-      />
-      <button
-        className="bg-blue-500 text-white p-4 rounded"
-        onClick={handleUpload}
+      <form
+        action={uploadFileToServer}
+        className="grid grid-cols-[auto,1fr] gap-4 m-5"
       >
-        Submit
-      </button>
+        <label htmlFor="transactionsAccountType" className="block">
+          File account type:
+        </label>
+        <select
+          id="transactionsAccountType"
+          name="transactionsAccountType"
+          defaultValue="expenses"
+          required
+        >
+          <option value="credit">Credit</option>
+          <option value="checking">Checking</option>
+        </select>
+
+        <label htmlFor="csvFile" className="block">
+          CSV file:
+        </label>
+        <input type="file" name="csvFile" className="w-96 p-4" />
+        <SubmitButton />
+      </form>
       {message && <p>{message}</p>}
     </main>
   );

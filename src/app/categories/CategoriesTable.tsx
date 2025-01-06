@@ -49,12 +49,23 @@ export default function CategoriesTable({
       },
     },
     {
-      headerName: "Regex",
-      field: "regex",
-    },
-    {
-      headerName: "Icon",
-      field: "icon",
+      headerName: "Type",
+      field: "categoryType",
+      cellEditor: "agSelectCellEditor",
+      cellEditorParams: {
+        values: ["income", "expense"],
+      },
+      valueFormatter: (params: ValueFormatterParams<ICategory, ICategory>) => {
+        if (params.data === null || params.data === undefined) {
+          return "";
+        }
+
+        if (params.data.categoryType === undefined) {
+          return "";
+        }
+
+        return params.data.categoryType;
+      },
     },
     {
       headerName: "Keywords",
@@ -71,6 +82,14 @@ export default function CategoriesTable({
         return params.data.keywords.join(", ");
       },
       editable: false,
+    },
+    // {
+    //   headerName: "Regex",
+    //   field: "regex",
+    // },
+    {
+      headerName: "Icon",
+      field: "icon",
     },
     {
       headerName: "Actions",

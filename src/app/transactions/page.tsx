@@ -81,7 +81,6 @@ export default function TransactionsTable() {
   useEffect(() => {
     const fetchCagetories = async () => {
       getCategories().then((res) => {
-        console.log("res", res);
         const newColumnDefs = [...COLUMN_DEFS];
         const evaluvatedCategoryColumnDefIdx = newColumnDefs.findIndex(
           (colDef) => colDef.field === "evaluvatedCategory",
@@ -119,15 +118,7 @@ export default function TransactionsTable() {
       const api = params.api;
 
       console.log("Grid ready");
-      // Fetch transaction data from API
-      // Ensure you have an API route like /api/transactions that returns a JSON array of TransactionRecord
-      // fetch("/api/transactions")
-      //   .then((res) => res.json())
-      //   .then((data: TransactionRecord[]) => {
-      //     setRowData(data);
-      //   })
-      //   .catch((err) => console.error(err));
-
+      // Fetch transactions
       getTransactions()
         .then((res) => {
           console.log("transactions res", res);
@@ -210,6 +201,7 @@ export default function TransactionsTable() {
       const api = params.api;
       if (!api) return;
       const filterModel = api.getFilterModel();
+      console.log("filter model", filterModel);
       const stringifiedFilterModel = JSON.stringify(filterModel);
       updateURLParams({
         filters: stringifiedFilterModel === "{}" ? "" : stringifiedFilterModel,
@@ -249,14 +241,16 @@ export default function TransactionsTable() {
   );
 
   const rerunCategorization = async () => {
-    const transactions = await recategorizeTransactions();
-    console.log("Transactions:", transactions);
-    // setRowData(transactions);
+    console.log("rerunCategorization");
+    await recategorizeTransactions();
   };
 
   const handleCellValueChange = (params: CellValueChangedEvent<ICategory>) => {
     console.log(params);
-    if (params.newValue._id !== params.oldValue._id) {
+    if (
+      params.oldValue !== null &&
+      params.oldValue._id !== params.newValue._id
+    ) {
       changeTransactionCategory(params.data._id, params.newValue._id);
     }
   };

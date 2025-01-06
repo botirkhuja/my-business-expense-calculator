@@ -9,12 +9,9 @@ export async function getCategories() {
   await connectToDatabase();
 
   const categories = await Category.find().lean();
-  const result = categories.map((category) => {
-    return {
-      ...category,
-      _id: category._id.toString(),
-    } as ICategory;
-  });
+  const result = categories
+    .map(categoryToJson)
+    .filter((category) => category !== null);
 
   return result;
 }
@@ -108,7 +105,7 @@ export async function getCategoryByKey(key: string) {
 export async function convertCategoryRegexToKeywords(categoryId: string) {
   await connectToDatabase();
 
-  const categoryFound = await Category.findById(categoryId, "regex");
+  const categoryFound = await Category.findById(categoryId);
   if (!categoryFound) {
     throw new Error("Category not found");
   }
@@ -152,6 +149,23 @@ export async function removeKeywordFromCategoryById(
   const keywordSet = new Set(categoryFound.keywords);
   keywordSet.delete(keyword);
   categoryFound.keywords = Array.from(keywordSet);
+  await categoryFound.save();
+  return categoryToJson(categoryFound);
+}
+
+export async function updateCategoryType(
+  categoryId: string,
+  type: ICategory["categoryType"],
+) {
+  await connectToDatabase();
+
+  const categoryFound = await Category.findById(categoryId);
+
+  if (!categoryFound) {
+    throw new Error("Category not found");
+  }
+
+  categoryFound.categoryType = type;
   await categoryFound.save();
   return categoryToJson(categoryFound);
 }
