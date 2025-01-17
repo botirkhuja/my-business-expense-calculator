@@ -59,8 +59,8 @@ export default function AnalyticsChart({
               filters = {
                 ...filters,
                 transactionDate: {
-                  dateFrom: `${getYear(date)}-${getMonth(date)}-${startOfMonth(date)} 00:00:00`,
-                  dateTo: `${getYear(date)}-${getMonth(date)}-${endOfMonth(date)} 00:00:00`,
+                  dateFrom: `${getYear(date)}-${getMonth(date) + 1}-${startOfMonth(date)} 00:00:00`,
+                  dateTo: `${getYear(date)}-${getMonth(date) + 1}-${endOfMonth(date)} 00:00:00`,
                   filterType: "date",
                   type: "inRange",
                 },

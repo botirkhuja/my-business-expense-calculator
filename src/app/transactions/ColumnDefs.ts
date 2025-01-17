@@ -2,6 +2,7 @@ import { ICategory } from "@/model/Category";
 import { ColDef, ValueFormatterParams } from "ag-grid-community";
 import { dateFormatter } from "./DateFormatter";
 import { TransactionRecord } from "@/model/Transaction";
+import RowActionsOptionSelector from "./RowActionsOptionSelector";
 
 function CurrencyCellRendererUSD(
   params: ValueFormatterParams<TransactionRecord, string>,
@@ -35,9 +36,10 @@ export const defaultColDef: ColDef = {
 // Define our column definitions for the ag-Grid
 export const COLUMN_DEFS: ColDef[] = [
   {
-    headerName: "Card Number",
+    headerName: "Card #",
     field: "cardNumber",
     filter: "agTextColumnFilter",
+    width: 100,
   },
 
   {
@@ -78,12 +80,14 @@ export const COLUMN_DEFS: ColDef[] = [
     },
     editable: true,
     cellEditor: "agSelectCellEditor",
-    // cellEditorParams: {
-    //   values: ["Uncategorized"],
-    // },
   },
   {
     headerName: "Type",
+    field: "transactionType",
+    filter: "agTextColumnFilter",
+  },
+  {
+    headerName: "Eval Type",
     field: "evaluvatedTransactionType",
     filter: "agTextColumnFilter",
   },
@@ -94,5 +98,8 @@ export const COLUMN_DEFS: ColDef[] = [
     filter: "agDateColumnFilter",
   },
   { headerName: "Memo", field: "memo", filter: "agTextColumnFilter" },
-  { headerName: "Ref ID", field: "refId", filter: "agTextColumnFilter" },
+  {
+    headerName: "Upload Receipt",
+    cellRenderer: RowActionsOptionSelector,
+  },
 ];

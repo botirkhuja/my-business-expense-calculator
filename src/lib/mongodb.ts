@@ -12,7 +12,6 @@ export async function connectToDatabase() {
   if (!uri) {
     throw new Error("MONGODB_URI not set");
   }
-  console.log("mongo uri:", uri);
   try {
     await mongoose.connect(uri, {
       // Make sure to add necessary options if needed
@@ -27,6 +26,7 @@ export async function connectToDatabase() {
       console.error("Error connecting to MongoDB:", error.message);
       isConnected = true;
     }
+    console.log("mongo uri:", uri);
     throw new Error("Failed to connect to MongoDB");
   }
 }

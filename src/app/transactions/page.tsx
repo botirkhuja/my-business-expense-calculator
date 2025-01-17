@@ -32,6 +32,7 @@ import {
 } from "./actions";
 import { getCategories } from "../categories/actions";
 import { ICategory } from "@/model/Category";
+import AddNewTransactionButton from "./AddNewTransactionButton";
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -79,6 +80,7 @@ export default function TransactionsTable() {
   const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
 
   useEffect(() => {
+    const api = gridRef.current?.api;
     const fetchCagetories = async () => {
       getCategories().then((res) => {
         const newColumnDefs = [...COLUMN_DEFS];
@@ -109,8 +111,20 @@ export default function TransactionsTable() {
 
     fetchCagetories();
 
+    // Set initial filter model if any
+    if (api && initialFilterModel) {
+      api.setFilterModel(initialFilterModel);
+    }
+
+    // Set initial sort model if any
+    if (api && initialSortModel && initialSortModel.length > 0) {
+      api.applyColumnState({
+        state: initialSortModel,
+        applyOrder: true,
+      });
+    }
     return () => {};
-  }, []);
+  }, [initialFilterModel, initialSortModel, gridRef]);
 
   // On grid ready, set initial sort/filter/pagination state from URL
   const onGridReady = useCallback(
@@ -201,7 +215,6 @@ export default function TransactionsTable() {
       const api = params.api;
       if (!api) return;
       const filterModel = api.getFilterModel();
-      console.log("filter model", filterModel);
       const stringifiedFilterModel = JSON.stringify(filterModel);
       updateURLParams({
         filters: stringifiedFilterModel === "{}" ? "" : stringifiedFilterModel,
@@ -218,7 +231,7 @@ export default function TransactionsTable() {
       // paginationGetCurrentPage returns 0-based index
       const currentPage = api.paginationGetCurrentPage() + 1;
 
-      if (firstDataRendered && currentPage !== initialPage) {
+      if (firstDataRendered.current === true && currentPage !== initialPage) {
         // initialPage = currentPage;
         updateURLParams({
           page: currentPage !== 1 ? currentPage.toString() : undefined,
@@ -241,7 +254,6 @@ export default function TransactionsTable() {
   );
 
   const rerunCategorization = async () => {
-    console.log("rerunCategorization");
     await recategorizeTransactions();
   };
 
@@ -259,14 +271,15 @@ export default function TransactionsTable() {
     <main>
       <h1>Transactions Page</h1>
       <p>Here you can view and manage your transactions.</p>
-      <div className="p-5">
+      <div className="flex gap-2 p-5">
         <button className="px-4 py-2 bg-gray-500" onClick={rerunCategorization}>
           Rerun Categorization
         </button>
+        <AddNewTransactionButton />
       </div>
       <div
         className="ag-theme-alpine"
-        style={{ height: "80vh", width: "100%" }}
+        style={{ height: "70vh", width: "100%" }}
       >
         <AgGridReact
           ref={gridRef}

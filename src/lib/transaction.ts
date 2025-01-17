@@ -19,7 +19,7 @@ export function convertToTransactionType(
   if (refundRegex.test(type)) {
     return "debit";
   }
-  return type.toLowerCase() === "d" ? "debit" : "credit";
+  return type.toLowerCase() === "d" ? "credit" : "debit";
 }
 
 export function getTextCategoryId(
@@ -45,23 +45,13 @@ export function getTextCategoryId(
 }
 
 export function getTransactionRecordCategoryId(
-  record: TransactionRecord,
+  record: TransactionRecord | Omit<TransactionRecord, "_id">,
   categories: ICategory[],
 ): Types.ObjectId | null {
   let evaluvatedCategory = getTextCategoryId(
     record.normalizedDescription,
     categories,
   );
-
-  if (record.normalizedDescription.includes("nazokat")) {
-    console.dir(evaluvatedCategory?._id.toString());
-    const catName = categories.find(
-      (c) => c._id === (evaluvatedCategory?._id.toString() as never as string),
-    )?.name;
-    console.dir(`${record.normalizedDescription}, ${catName}`, {
-      colors: true,
-    });
-  }
 
   if (!evaluvatedCategory && record.normalizedMerchant) {
     evaluvatedCategory = getTextCategoryId(

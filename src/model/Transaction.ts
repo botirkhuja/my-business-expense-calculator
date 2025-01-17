@@ -25,7 +25,7 @@ export interface TransactionRecord {
   cardNumber: string | null;
   postDate: Date;
   transactionDate: Date;
-  refId: string;
+  refId: string | null;
   description: string;
   normalizedDescription: string;
   amount: string;
@@ -33,12 +33,13 @@ export interface TransactionRecord {
   normalizedMerchant: string | null;
   transactionType: string | null;
   evaluvatedTransactionType: "debit" | "credit";
-  accountType: "checking" | "credit" | "savings";
+  accountType: "checking" | "credit" | "savings" | "cash";
   category: string | null;
   normalizedCategory: string | null;
   evaluvatedCategory: Types.ObjectId | ICategory | null;
   isCategoryManuallySet?: boolean;
-  memo: string;
+  memo: string | null;
+  receiptUrls?: string[];
 }
 
 const TransactionSchema = new Schema<
@@ -66,7 +67,7 @@ const TransactionSchema = new Schema<
     },
     accountType: {
       type: String,
-      enum: ["checking", "credit", "savings"],
+      enum: ["checking", "credit", "savings", "cash"],
       required: true,
     },
     category: { type: String, default: null },
@@ -78,6 +79,7 @@ const TransactionSchema = new Schema<
     },
     isCategoryManuallySet: { type: Boolean, default: false },
     memo: String,
+    receiptUrls: { type: [String], default: [] },
   },
   { timestamps: true },
 );
@@ -112,6 +114,7 @@ export const transactionToJson = (
     isCategoryManuallySet: transactionRecord.isCategoryManuallySet,
     memo: transactionRecord.memo,
     _id: transactionRecord._id.toString(),
+    receiptUrls: transactionRecord.receiptUrls,
   };
   return transaction;
 };

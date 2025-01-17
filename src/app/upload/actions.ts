@@ -6,6 +6,7 @@ import { parse } from "csv-parse";
 import Transaction, {
   TransactionHeaderMap,
   TransactionRecord,
+  transactionToJson,
 } from "@/model/Transaction";
 import {
   convertToTransactionType,
@@ -13,8 +14,9 @@ import {
 } from "@/lib/transaction";
 import { getCategories } from "../categories/actions";
 import { redirect } from "next/navigation";
+import { uploadTransactionReceipt } from "./UploadReceipt";
 
-export async function uploadFile(formData: FormData) {
+export async function uploadCsvFile(formData: FormData) {
   try {
     // const formData = await req.formData();
     const file = formData.get("csvFile") as File;
@@ -123,4 +125,38 @@ export async function uploadFile(formData: FormData) {
     return { error: "File upload error" };
   }
   redirect("/transactions");
+}
+
+export async function uploadReceipt(file: File, transactionId: string) {
+  try {
+    // const transactionId = formData.get("transactionId") as string;
+
+    await connectToDatabase();
+    const foundTransaction = await Transaction.findById(transactionId);
+
+    if (!foundTransaction) {
+      throw new Error("Transaction not found");
+    }
+
+    const uploadedFileUrl = await uploadTransactionReceipt(
+      file,
+      foundTransaction._id,
+    );
+    if (!uploadedFileUrl) {
+      throw new Error("Receipt upload error");
+    }
+
+    const receiptUrls = new Set(foundTransaction.receiptUrls || []);
+    receiptUrls.add(uploadedFileUrl);
+    foundTransaction.receiptUrls = Array.from(receiptUrls);
+    await foundTransaction.save();
+
+    return { ...transactionToJson(foundTransaction), error: null };
+  } catch (error) {
+    console.error("Receipt upload error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Receipt upload error" };
+  }
 }

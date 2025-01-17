@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { uploadFile } from "./actions";
+import { uploadCsvFile } from "./actions";
 import SubmitButton from "./SubmitButton";
 
 export default function Home() {
   const [message, setMessage] = useState("");
 
   const uploadFileToServer = async (event: FormData) => {
-    const result = await uploadFile(event);
+    const result = await uploadCsvFile(event);
     if (result?.error) {
       setMessage(result.error);
     }

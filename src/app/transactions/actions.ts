@@ -98,3 +98,79 @@ export async function changeTransactionCategory(
 
   return transactionToJson(transaction);
 }
+
+export async function deleteTransactionById(transactionId: string) {
+  connectToDatabase();
+
+  const transaction = await Transaction.findById(transactionId);
+  await transaction?.deleteOne().exec();
+  await Transaction.deleteOne({ _id: transactionId });
+}
+
+type TransactionToBeCreated = {
+  transactionDate: Date;
+  description: string;
+  amount: string;
+  transactionType: "debit" | "credit";
+};
+
+export async function registerNewTransaction(
+  transactionToBeCreated: TransactionToBeCreated,
+) {
+  connectToDatabase();
+
+  const categories = await getCategories();
+
+  const newTransaction = createTransactionObject({
+    ...transactionToBeCreated,
+  });
+
+  newTransaction.evaluvatedCategory = getTransactionRecordCategoryId(
+    newTransaction,
+    categories,
+  );
+  const transactionInstance = new Transaction(newTransaction);
+  await transactionInstance.save();
+  return transactionToJson(transactionInstance);
+}
+
+const createTransactionObject = (
+  transaction: TransactionToBeCreated,
+): Omit<TransactionRecord, "_id"> => {
+  const description = transaction.description;
+  const amount = transaction.amount;
+  const transactionType = transaction.transactionType;
+
+  if (description === undefined) {
+    throw new Error("Description is required");
+  }
+
+  if (amount === undefined) {
+    throw new Error("Amount is required");
+  }
+
+  if (transactionType === undefined) {
+    throw new Error("Transaction type is required");
+  }
+  return {
+    ...transaction,
+    cardNumber: null,
+    postDate: new Date(),
+    transactionDate: transaction.transactionDate || new Date(),
+    refId: null,
+    description: transaction.description,
+    normalizedDescription: transaction.description?.trim().toLowerCase(),
+    amount: transaction.amount,
+    merchant: null,
+    normalizedMerchant: null,
+    transactionType: transaction.transactionType || null,
+    evaluvatedTransactionType: transactionType,
+    accountType: "cash",
+    category: null,
+    normalizedCategory: null,
+    evaluvatedCategory: null,
+    isCategoryManuallySet: false,
+    memo: null,
+    receiptUrls: [],
+  };
+};
