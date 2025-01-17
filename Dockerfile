@@ -14,4 +14,4 @@ COPY . .
 EXPOSE 3000
 
 # Start the development server
-CMD ["yarn", "dev"]
+CMD ["yarn", "start"]
