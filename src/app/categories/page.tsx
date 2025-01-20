@@ -22,8 +22,6 @@ export default function CategoriesPage() {
     };
   }, []);
 
-  if (!categoriesData.length) return null;
-
   return (
     <main>
       <h1>Categories Page</h1>
