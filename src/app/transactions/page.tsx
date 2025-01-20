@@ -1,13 +1,14 @@
 "use client"; // Needed because we'll fetch data at runtime and use React states
 
 import React, {
+  use,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 // import "ag-grid-community/styles/ag-grid.css";
 // import "ag-grid-community/styles/ag-theme-alpine.css";
@@ -39,8 +40,15 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 const DEFAULT_PAGE_SIZE = 50;
 
-export default function TransactionsPage() {
-  const searchParams = useSearchParams();
+export default function TransactionsPage({
+  searchParams: pSearchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = use(pSearchParams);
+  console.log("params", searchParams);
+  // const searchParams = useSearchParams();
   const router = useRouter();
 
   const gridRef = useRef<AgGridReact>(null);
@@ -49,12 +57,13 @@ export default function TransactionsPage() {
   const [colDefs, setColDefs] = useState(COLUMN_DEFS);
   const firstDataRendered = useRef(false);
 
-  const pageParam = searchParams.get("page");
+  const pageParam = searchParams.page;
 
   // Convert `filters` and `sort` from JSON string to objects
   const initialFilterModel: FilterModel = useMemo(() => {
-    const filtersParam = searchParams.get("filters");
+    const filtersParam = searchParams.filters;
     if (!filtersParam) return {};
+    if (filtersParam instanceof Array) return {};
     try {
       return JSON.parse(filtersParam);
     } catch (err) {
@@ -64,8 +73,9 @@ export default function TransactionsPage() {
   }, [searchParams]);
 
   const initialSortModel: ColumnState[] = useMemo(() => {
-    const sortParam = searchParams.get("sort");
+    const sortParam = searchParams.sort;
     if (!sortParam) return [];
+    if (sortParam instanceof Array) return [];
     try {
       if (sortParam) {
         return JSON.parse(sortParam);
@@ -77,7 +87,8 @@ export default function TransactionsPage() {
   }, [searchParams]);
 
   // Default to page 1 if none provided
-  const initialPage = pageParam ? parseInt(pageParam, 10) : 1;
+  const initialPage =
+    pageParam && !(pageParam instanceof Array) ? parseInt(pageParam, 10) : 1;
 
   useEffect(() => {
     const api = gridRef.current?.api;

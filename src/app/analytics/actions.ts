@@ -174,7 +174,7 @@ export async function getAnalyticsData(
     await Transaction.aggregate(pipeline).exec();
   // console.log("results", results);
 
-  const analytics: Record<string, any> = {};
+  const analytics: Record<string, Record<string, number>> = {};
   let result: BarChartDataRow[] = [];
 
   if (chart === "bar" && range === "year") {
