@@ -32,14 +32,14 @@ import {
 } from "./actions";
 import { getCategories } from "../categories/actions";
 import { ICategory } from "@/model/Category";
-import AddNewTransactionButton from "./AddNewTransactionButton";
+import AddNewTransactionLink from "./AddNewTransactionLink";
 
 // Register all Community features
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const DEFAULT_PAGE_SIZE = 50;
 
-export default function TransactionsTable() {
+export default function TransactionsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -259,10 +259,7 @@ export default function TransactionsTable() {
 
   const handleCellValueChange = (params: CellValueChangedEvent<ICategory>) => {
     console.log(params);
-    if (
-      params.oldValue !== null &&
-      params.oldValue._id !== params.newValue._id
-    ) {
+    if (params.oldValue?._id !== params.newValue?._id) {
       changeTransactionCategory(params.data._id, params.newValue._id);
     }
   };
@@ -275,7 +272,7 @@ export default function TransactionsTable() {
         <button className="px-4 py-2 bg-gray-500" onClick={rerunCategorization}>
           Rerun Categorization
         </button>
-        <AddNewTransactionButton />
+        <AddNewTransactionLink />
       </div>
       <div
         className="ag-theme-alpine"

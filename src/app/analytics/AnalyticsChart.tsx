@@ -8,13 +8,12 @@ import {
   AgChartOptions,
   AgNodeClickEvent,
 } from "ag-charts-community";
-import { useRouter, useSearchParams } from "next/navigation";
-import { FilterModel } from "ag-grid-community";
-import { BarChartDataRow } from "./types";
-import { getMonth, getYear, endOfMonth, startOfMonth } from "date-fns";
+import { useSearchParams } from "next/navigation";
+import { AnaylyticsRow, BarChartDataRow } from "./types";
+import useNavigateToTransactionsByCategory from "./useNavigateToTransactionsByCategory";
 
 interface AnalyticsChartProps {
-  data: BarChartDataRow[];
+  data: AnaylyticsRow[] | BarChartDataRow[];
   keys?: string[];
   date: Date | null;
 }
@@ -24,8 +23,9 @@ export default function AnalyticsChart({
   keys,
   date,
 }: AnalyticsChartProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const navigateToTransactionsByCategory =
+    useNavigateToTransactionsByCategory(date);
   const chart = searchParams.get("chart") || "pie";
 
   const agLegend: AgChartLegendOptions = {
@@ -47,33 +47,7 @@ export default function AnalyticsChart({
               { category: string; amount: number }
             >,
           ) => {
-            let filters: FilterModel = {
-              evaluvatedCategory: {
-                filter: _event.datum.category,
-                filterType: "text",
-                type: "contains",
-              },
-            };
-
-            if (searchParams.get("range") === "month" && date) {
-              filters = {
-                ...filters,
-                transactionDate: {
-                  dateFrom: `${getYear(date)}-${getMonth(date) + 1}-${startOfMonth(date)} 00:00:00`,
-                  dateTo: `${getYear(date)}-${getMonth(date) + 1}-${endOfMonth(date)} 00:00:00`,
-                  filterType: "date",
-                  type: "inRange",
-                },
-              };
-              console.log("adding range", filters);
-            }
-
-            const filtersString = JSON.stringify(filters);
-            const urlSearchParams = new URLSearchParams();
-            urlSearchParams.set("filters", filtersString);
-
-            router.push(`transactions?${urlSearchParams.toString()}`);
-            console.log("node click", _event.datum);
+            navigateToTransactionsByCategory(_event.datum);
           },
         },
       },
@@ -82,19 +56,6 @@ export default function AnalyticsChart({
       text: "Analytics Pie Chart",
     },
     legend: agLegend,
-    // listeners: {
-    //   seriesNodeClick: (
-    //     _event: AgNodeClickEvent<"seriesNodeClick", { data: string }>,
-    //   ) => {
-    //     console.log("series node click", _event);
-    //   },
-    //   click: (_event: AgChartClickEvent) => {
-    //     console.log("click", _event);
-    //   },
-    //   doubleClick: (_event: AgChartDoubleClickEvent) => {
-    //     console.log("double click", _event);
-    //   },
-    // },
   };
 
   const barSeriesForYear = keys
@@ -126,8 +87,6 @@ export default function AnalyticsChart({
   } else {
     chartOptions = { ...pieChartOptions, data };
   }
-
-  console.log("chart data", data);
 
   return (
     <div className="grid h-full">

@@ -1,25 +1,8 @@
 import { ICategory } from "@/model/Category";
 import { ColDef, ValueFormatterParams } from "ag-grid-community";
 import { dateFormatter } from "./DateFormatter";
-import { TransactionRecord } from "@/model/Transaction";
 import RowActionsOptionSelector from "./RowActionsOptionSelector";
-
-function CurrencyCellRendererUSD(
-  params: ValueFormatterParams<TransactionRecord, string>,
-) {
-  const { value } = params;
-
-  if (!value) {
-    return "$0.00";
-  }
-
-  const inrFormat = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-  });
-  return inrFormat.format(parseFloat(value));
-}
+import { CurrencyCellRendererUSD } from "@/lib/CurrencyCellRendererUSD";
 
 export const defaultColDef: ColDef = {
   sortable: true,

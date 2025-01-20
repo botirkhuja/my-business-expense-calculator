@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
-export default function EditCategoryButton(props: CustomCellRendererProps) {
+export default function CategoriesEditCategoryButton(
+  props: CustomCellRendererProps,
+) {
   const pathName = usePathname();
   return (
     <Link

@@ -16,7 +16,7 @@ import {
 } from "date-fns";
 import { PipelineStage } from "mongoose";
 import { ICategory } from "@/model/Category";
-import { AnalyticsRange, BarChartDataRow } from "./types";
+import { AnalyticsRange, BarChartDataRow, GetAnalyticsResponse } from "./types";
 
 const MONTHS = [
   "January",
@@ -54,7 +54,9 @@ interface Props {
 }
 
 // This could call /api/analytics or any external server
-export async function getAnalyticsData(props: Props) {
+export async function getAnalyticsData(
+  props: Props,
+): Promise<GetAnalyticsResponse> {
   await connectToDatabase();
   const years = await getAvailableYearsAndMonths();
 

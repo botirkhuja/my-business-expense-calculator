@@ -7,6 +7,7 @@ import { AnalyticsRange } from "./types";
 import MonthSelector from "./MonthSelector";
 import AnalyticsChartTypeSelector from "./AnalyticsChartTypeSelector";
 import { getYear } from "date-fns";
+import AnalyticsSummaryTableLink from "./SummaryTableLink";
 
 export default async function AnalyticsPage({
   searchParams,
@@ -18,7 +19,6 @@ export default async function AnalyticsPage({
     chart?: string;
   }>;
 }) {
-  console.log("search params", await searchParams);
   const { range, year, month, chart } = await searchParams;
   const availableYears = await getAvailableYearsAndMonths();
   const date: Date = new Date();
@@ -42,12 +42,16 @@ export default async function AnalyticsPage({
   });
 
   return (
-    <main className="p-4" style={{ height: "75vh" }}>
+    <main className="p-4 flex flex-col gap-2" style={{ height: "75vh" }}>
       <h1>Analytics Page</h1>
-      <p>This chart shows the distribution of data from your analytics.</p>
-      <AnalyticsChartTypeSelector />
-      <AnalyticsViewSelector />
-      <YearSelector />
+      <div>
+        <AnalyticsSummaryTableLink />
+      </div>
+      <div className="flex gap-6">
+        <AnalyticsChartTypeSelector />
+        <AnalyticsViewSelector />
+        <YearSelector />
+      </div>
       {range === "month" && <MonthSelector />}
       {/* Pass data as a prop to the client component */}
       <AnalyticsChart

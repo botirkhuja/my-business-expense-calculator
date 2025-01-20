@@ -12,7 +12,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import EditCategoryButton from "./EditCategoryButton";
+import CategoriesEditCategoryButton from "./EditCategoryButton";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -93,7 +93,7 @@ export default function CategoriesTable({
     },
     {
       headerName: "Actions",
-      cellRenderer: EditCategoryButton,
+      cellRenderer: CategoriesEditCategoryButton,
       sortable: false,
       filter: false,
       resizable: false,
