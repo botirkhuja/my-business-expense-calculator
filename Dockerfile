@@ -10,6 +10,8 @@ RUN yarn install --production --no-cache
 # Copy the rest of the application
 COPY . .
 
+RUN yarn build
+
 # Expose the Next.js dev port
 EXPOSE 3000
 
