@@ -10,6 +10,9 @@ interface IProps {
 
 export default function AnalyticsSummaryTable(props: IProps) {
   const expenses = props.data.filter((row) => row.category !== "Income");
+  const sortedByExpensesCategory = expenses.sort((a, b) =>
+    a.category.localeCompare(b.category),
+  );
   const expensesTotal = expenses.reduce((acc, row) => acc + row.amount, 0);
   const income = props.data.filter((row) => row.category === "Income");
   const incomeTotal = income.reduce((acc, row) => acc + row.amount, 0);
@@ -19,7 +22,7 @@ export default function AnalyticsSummaryTable(props: IProps) {
       <div>
         <h4>Expenses</h4>
         <div className="border border-gray-300">
-          {expenses.map((row) => (
+          {sortedByExpensesCategory.map((row) => (
             <div
               className="text-sm flex justify-between gap-2 p-2"
               key={row.category}
